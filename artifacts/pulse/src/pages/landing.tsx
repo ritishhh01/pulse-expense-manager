@@ -1,10 +1,12 @@
-import { Link } from "wouter";
-import { ArrowRight, Users, Receipt, Zap } from "lucide-react";
+import { ArrowRight, Users, Receipt, Zap, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useTheme } from "@/hooks/use-theme";
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 export default function Landing() {
+  const { theme, toggleTheme } = useTheme();
+
   return (
     <div className="min-h-[100dvh] bg-background text-foreground flex flex-col">
       {/* Header */}
@@ -15,9 +17,18 @@ export default function Landing() {
           </div>
           <span className="font-bold text-lg tracking-tight">Pulse</span>
         </div>
-        <Button asChild variant="ghost" size="sm" className="rounded-full text-primary hover:bg-primary/10">
-          <a href={`${basePath}/sign-in`}>Sign in</a>
-        </Button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={toggleTheme}
+            className="h-9 w-9 rounded-full border border-border/50 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            aria-label="Toggle theme"
+          >
+            {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </button>
+          <Button asChild variant="ghost" size="sm" className="rounded-full text-primary hover:bg-primary/10">
+            <a href={`${basePath}/sign-in`}>Sign in</a>
+          </Button>
+        </div>
       </header>
 
       {/* Hero */}

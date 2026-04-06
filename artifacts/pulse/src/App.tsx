@@ -2,9 +2,11 @@ import { useEffect, useRef } from "react";
 import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { ClerkProvider, Show, SignIn, SignUp, useClerk, useAuth } from "@clerk/react";
+import { Sun, Moon } from "lucide-react";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ActiveUserProvider, useActiveUserState } from "@/hooks/use-active-user";
+import { useTheme } from "@/hooks/use-theme";
 
 import Dashboard from "@/pages/dashboard";
 import Groups from "@/pages/groups";
@@ -25,48 +27,59 @@ if (!clerkPubKey) {
   throw new Error("Missing VITE_CLERK_PUBLISHABLE_KEY");
 }
 
-const clerkAppearance = {
-  variables: {
-    colorPrimary: "#39FF14",
-    colorBackground: "hsl(240 17% 8%)",
-    colorInputBackground: "hsl(240 10% 15%)",
-    colorInputText: "#ffffff",
-    colorText: "#ffffff",
-    colorTextSecondary: "hsl(240 5% 64%)",
-    borderRadius: "0.75rem",
-    fontFamily: "Inter, system-ui, sans-serif",
-  },
-  elements: {
-    card: {
-      style: {
-        background: "hsl(240 14% 10%)",
-        border: "1px solid hsl(240 10% 18%)",
-        boxShadow: "0 25px 50px -12px rgb(57 255 20 / 0.08)",
+function getClerkAppearance(theme: "dark" | "light") {
+  const isDark = theme === "dark";
+  return {
+    variables: {
+      colorPrimary: isDark ? "#39FF14" : "#16a34a",
+      colorBackground: isDark ? "hsl(240 17% 8%)" : "#ffffff",
+      colorInputBackground: isDark ? "hsl(240 10% 15%)" : "#f9fafb",
+      colorInputText: isDark ? "#ffffff" : "#111827",
+      colorText: isDark ? "#ffffff" : "#111827",
+      colorTextSecondary: isDark ? "hsl(240 5% 64%)" : "#6b7280",
+      borderRadius: "0.75rem",
+      fontFamily: "Inter, system-ui, sans-serif",
+    },
+    elements: {
+      card: {
+        style: isDark
+          ? {
+              background: "hsl(240 14% 10%)",
+              border: "1px solid hsl(240 10% 18%)",
+              boxShadow: "0 25px 50px -12px rgb(57 255 20 / 0.08)",
+            }
+          : {
+              background: "#ffffff",
+              border: "1px solid #e5e7eb",
+              boxShadow: "0 10px 40px -8px rgba(0,0,0,0.12)",
+            },
       },
-    },
-    // Make the Google / social button readable: white bg, dark text
-    socialButtonsBlockButton: {
-      style: {
-        backgroundColor: "#ffffff",
-        color: "#1a1a1a",
-        border: "1px solid #e2e8f0",
+      // Google button always: white bg, dark readable text
+      socialButtonsBlockButton: {
+        style: {
+          backgroundColor: "#ffffff",
+          color: "#111827",
+          border: "1px solid #d1d5db",
+        },
       },
-    },
-    socialButtonsBlockButtonText: {
-      style: { color: "#1a1a1a", fontWeight: "500" },
-    },
-    dividerLine: {
-      style: { background: "hsl(240 10% 20%)" },
-    },
-    formFieldInput: {
-      style: {
-        background: "hsl(240 10% 15%)",
-        color: "#ffffff",
-        border: "1px solid hsl(240 10% 22%)",
+      socialButtonsBlockButtonText: {
+        style: { color: "#111827", fontWeight: "500" as const },
       },
+      dividerLine: {
+        style: { background: isDark ? "hsl(240 10% 20%)" : "#e5e7eb" },
+      },
+      formFieldInput: isDark
+        ? {
+            style: {
+              background: "hsl(240 10% 15%)",
+              color: "#ffffff",
+              border: "1px solid hsl(240 10% 22%)",
+            },
+          }
+        : {},
     },
-  },
-};
+  };
+}
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -96,27 +109,44 @@ function ClerkQueryCacheInvalidator() {
   return null;
 }
 
+function ThemeToggle() {
+  const { theme, toggleTheme } = useTheme();
+  return (
+    <button
+      onClick={toggleTheme}
+      className="fixed top-4 right-4 z-50 h-9 w-9 rounded-full bg-card border border-border/50 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors shadow-sm"
+      aria-label="Toggle theme"
+    >
+      {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+    </button>
+  );
+}
+
 function SignInPage() {
+  const { theme } = useTheme();
   return (
     <div className="min-h-[100dvh] bg-background flex items-center justify-center p-4">
+      <ThemeToggle />
       <SignIn
         routing="path"
         path={`${basePath}/sign-in`}
         signUpUrl={`${basePath}/sign-up`}
-        appearance={clerkAppearance}
+        appearance={getClerkAppearance(theme)}
       />
     </div>
   );
 }
 
 function SignUpPage() {
+  const { theme } = useTheme();
   return (
     <div className="min-h-[100dvh] bg-background flex items-center justify-center p-4">
+      <ThemeToggle />
       <SignUp
         routing="path"
         path={`${basePath}/sign-up`}
         signInUrl={`${basePath}/sign-in`}
-        appearance={clerkAppearance}
+        appearance={getClerkAppearance(theme)}
       />
     </div>
   );

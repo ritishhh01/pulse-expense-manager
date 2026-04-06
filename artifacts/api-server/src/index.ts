@@ -1,5 +1,6 @@
 import app from "./app";
 import { logger } from "./lib/logger";
+import { ensureSchema } from "./lib/migrate";
 import { ensureSeedData } from "./lib/seed";
 
 const rawPort = process.env["PORT"];
@@ -17,6 +18,7 @@ if (Number.isNaN(port) || port <= 0) {
 }
 
 async function main() {
+  await ensureSchema();
   await ensureSeedData();
 
   app.listen(port, (err) => {
