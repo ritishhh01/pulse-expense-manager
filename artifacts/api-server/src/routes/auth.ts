@@ -33,8 +33,7 @@ router.post("/auth/me", async (req, res): Promise<void> => {
     return;
   }
 
-  const client = await clerkClient();
-  const clerkUser = await client.users.getUser(clerkId);
+  const clerkUser = await clerkClient.users.getUser(clerkId);
 
   const phone = clerkUser.phoneNumbers?.[0]?.phoneNumber ?? null;
   const email =

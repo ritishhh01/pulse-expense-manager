@@ -15,12 +15,10 @@ export async function ensureSchema(): Promise<void> {
         ADD COLUMN IF NOT EXISTS phone_number text
     `);
 
-    // Add unique constraint on clerk_id (ignore if it already exists)
+    // Unique partial index on clerk_id — idempotent via IF NOT EXISTS
     await db.execute(sql`
-      DO $$ BEGIN
-        ALTER TABLE users ADD CONSTRAINT users_clerk_id_unique UNIQUE (clerk_id);
-      EXCEPTION WHEN duplicate_object THEN NULL;
-      END $$
+      CREATE UNIQUE INDEX IF NOT EXISTS users_clerk_id_idx
+        ON users (clerk_id) WHERE clerk_id IS NOT NULL
     `);
 
     logger.info("Schema migration OK");
