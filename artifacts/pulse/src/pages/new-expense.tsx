@@ -127,7 +127,7 @@ export default function NewExpense() {
   }
 
   return (
-    <Layout title="Add Expense" showBack>
+    <Layout title="Add Expense" showBack backHref="/groups">
       <div className="pt-4 pb-32">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">

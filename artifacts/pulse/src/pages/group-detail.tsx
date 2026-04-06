@@ -81,7 +81,7 @@ export default function GroupDetail() {
 
   if (isLoadingGroup) {
     return (
-      <Layout title="Loading..." showBack>
+      <Layout title="Loading..." showBack backHref="/groups">
         <div className="space-y-4 mt-4">
           <Skeleton className="h-32 rounded-2xl" />
           <Skeleton className="h-48 rounded-2xl" />
@@ -92,7 +92,7 @@ export default function GroupDetail() {
 
   if (!group) {
     return (
-      <Layout title="Not Found" showBack>
+      <Layout title="Not Found" showBack backHref="/groups">
         <div className="text-center py-12 text-muted-foreground">Group not found.</div>
       </Layout>
     );
@@ -102,6 +102,7 @@ export default function GroupDetail() {
     <Layout
       title={group.name}
       showBack
+      backHref="/groups"
       actions={
         <Button
           variant="ghost"

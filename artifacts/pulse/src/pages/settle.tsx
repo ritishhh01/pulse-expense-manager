@@ -119,7 +119,7 @@ export default function Settle() {
   }
 
   return (
-    <Layout title="Settle Up" showBack>
+    <Layout title="Settle Up" showBack backHref="/">
       <AnimatePresence>{showConfetti && <ConfettiEffect />}</AnimatePresence>
 
       <div className="space-y-6 pb-24">

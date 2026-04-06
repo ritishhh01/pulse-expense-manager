@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Link } from "wouter";
 import { useActiveUser } from "@/hooks/use-active-user";
+import { useTheme } from "@/hooks/use-theme";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ArrowLeft } from "lucide-react";
+import { X, ArrowLeft, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export function ChaotechhPill() {
@@ -31,7 +32,7 @@ export function ChaotechhPill() {
             >
               <button
                 onClick={() => setIsOpen(false)}
-                className="absolute right-4 top-4 text-muted-foreground hover:text-foreground active:scale-95 transition-transform"
+                className="absolute right-4 top-4 inline-flex h-7 w-7 items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted active:scale-95 transition-all"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -57,34 +58,61 @@ export function ChaotechhPill() {
 interface LayoutProps {
   children: React.ReactNode;
   showBack?: boolean;
+  backHref?: string;
   title?: string;
   actions?: React.ReactNode;
 }
 
-export function Layout({ children, showBack, title, actions }: LayoutProps) {
+export function Layout({ children, showBack, backHref = "/", title, actions }: LayoutProps) {
   const user = useActiveUser();
+  const { theme, toggleTheme } = useTheme();
 
   return (
     <div className="min-h-[100dvh] bg-background text-foreground pb-24">
       <header className="sticky top-0 z-40 w-full backdrop-blur-xl bg-background/80 border-b border-border/40">
-        <div className="container mx-auto max-w-lg px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+        <div className="container mx-auto max-w-lg px-4 h-16 flex items-center justify-between gap-2">
+          {/* Left side */}
+          <div className="flex items-center gap-2 min-w-0">
             {showBack ? (
-              <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95 transition-transform" asChild>
-                <Link href="/">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 shrink-0 rounded-full active:scale-95 transition-transform"
+                asChild
+              >
+                <Link href={backHref}>
                   <ArrowLeft className="h-4 w-4" />
                 </Link>
               </Button>
             ) : null}
-            <h1 className="font-semibold text-lg tracking-tight">
+            <h1 className="font-semibold text-lg tracking-tight truncate">
               {title || "Pulse"}
             </h1>
           </div>
-          <div className="flex items-center gap-3">
+
+          {/* Right side */}
+          <div className="flex items-center gap-1.5 shrink-0">
             {actions}
+
+            {/* Theme toggle */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              className="h-9 w-9 rounded-full active:scale-95 transition-transform text-muted-foreground hover:text-foreground"
+              aria-label="Toggle theme"
+            >
+              {theme === "dark" ? (
+                <Sun className="h-4 w-4" />
+              ) : (
+                <Moon className="h-4 w-4" />
+              )}
+            </Button>
+
+            {/* Avatar — only on home/non-back pages */}
             {!showBack && (
-              <div 
-                className="h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold text-primary-foreground"
+              <div
+                className="h-9 w-9 rounded-full inline-flex items-center justify-center text-sm font-bold text-white shrink-0"
                 style={{ backgroundColor: user.avatarColor }}
               >
                 {user.name.charAt(0).toUpperCase()}
@@ -94,7 +122,7 @@ export function Layout({ children, showBack, title, actions }: LayoutProps) {
         </div>
       </header>
 
-      <main className="container mx-auto max-w-lg p-4">
+      <main className="container mx-auto max-w-lg px-4 py-4">
         {children}
       </main>
 

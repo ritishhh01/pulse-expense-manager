@@ -26,7 +26,7 @@ export default function Activity() {
   );
 
   return (
-    <Layout title="Activity" showBack>
+    <Layout title="Activity" showBack backHref="/">
       <div className="space-y-4 pb-24">
         {isLoading ? (
           Array.from({ length: 5 }).map((_, i) => (

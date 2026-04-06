@@ -83,7 +83,7 @@ export default function NewGroup() {
   }
 
   return (
-    <Layout title="New Group" showBack>
+    <Layout title="New Group" showBack backHref="/groups">
       <div className="pt-4 pb-32">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">

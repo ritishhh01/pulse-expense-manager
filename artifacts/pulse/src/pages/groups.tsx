@@ -28,7 +28,7 @@ export default function Groups() {
   );
 
   return (
-    <Layout title="Groups" showBack actions={
+    <Layout title="Groups" showBack backHref="/" actions={
       <Button variant="ghost" size="icon" asChild className="active:scale-95 transition-transform rounded-full">
         <Link href="/groups/new">
           <Plus className="h-4 w-4" />
