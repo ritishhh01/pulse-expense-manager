@@ -21,7 +21,7 @@ export function ELI7Tooltip({ term, explanation }: ELI7TooltipProps) {
             <Info className="h-3 w-3 text-muted-foreground" />
           </span>
         </TooltipTrigger>
-        <TooltipContent className="max-w-[250px] p-3 text-sm bg-card border border-border shadow-xl">
+        <TooltipContent className="max-w-[250px] p-3 text-sm bg-popover text-popover-foreground border border-border shadow-xl">
           <p>{explanation}</p>
         </TooltipContent>
       </Tooltip>

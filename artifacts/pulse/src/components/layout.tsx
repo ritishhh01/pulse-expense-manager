@@ -242,8 +242,8 @@ export function Layout({
       </AnimatePresence>
 
       {/* Top header (always shown) */}
-      <header className="sticky top-0 z-40 w-full backdrop-blur-xl bg-background/80 border-b border-border/40 lg:ml-60">
-        <div className="px-4 h-14 flex items-center justify-between gap-2 max-w-5xl">
+      <header className="sticky top-0 z-40 backdrop-blur-xl bg-background/80 border-b border-border/40 lg:ml-60">
+        <div className="px-4 h-14 flex items-center justify-between gap-2">
           {/* Left side */}
           <div className="flex items-center gap-2 min-w-0">
             {/* Mobile hamburger (only on mobile, only on root pages) */}
@@ -306,7 +306,7 @@ export function Layout({
       </header>
 
       {/* Main content */}
-      <main className="lg:ml-60 px-4 py-4 pb-28 lg:pb-8 max-w-5xl">
+      <main className="lg:ml-60 px-4 py-4 pb-28 lg:pb-8">
         {children}
       </main>
 
