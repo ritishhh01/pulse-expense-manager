@@ -14,6 +14,7 @@ export interface ExpenseWithSplits {
   description: string;
   amount: number;
   category: string;
+  notes?: string | null;
   paidByUserId: number;
   paidByUserName: string;
   createdAt: Date;

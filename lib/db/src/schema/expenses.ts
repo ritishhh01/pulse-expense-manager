@@ -10,6 +10,7 @@ export const expensesTable = pgTable("expenses", {
   description: text("description").notNull(),
   amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
   category: text("category").notNull().default("others"),
+  notes: text("notes"),
   paidByUserId: integer("paid_by_user_id").notNull().references(() => usersTable.id),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

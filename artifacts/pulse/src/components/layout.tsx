@@ -16,6 +16,8 @@ import {
   Activity,
   Menu,
   LogOut,
+  UserRound,
+  UsersRound,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -26,6 +28,15 @@ const NAV_ITEMS = [
   { href: "/expenses/new", label: "Add Expense", icon: Plus },
   { href: "/settle", label: "Settle Up", icon: ArrowLeftRight },
   { href: "/activity", label: "Activity", icon: Activity },
+  { href: "/friends", label: "Friends", icon: UsersRound },
+  { href: "/profile", label: "Profile", icon: UserRound },
+];
+
+const MOBILE_TAB_ITEMS = [
+  { href: "/", label: "Home", icon: LayoutDashboard },
+  { href: "/groups", label: "Groups", icon: Users },
+  { href: "/friends", label: "Friends", icon: UsersRound },
+  { href: "/profile", label: "Profile", icon: UserRound },
 ];
 
 function NavLink({ href, label, icon: Icon }: (typeof NAV_ITEMS)[0]) {
@@ -124,12 +135,14 @@ function DesktopSidebar() {
         <ChaotechhPill />
 
         <div className="flex items-center gap-2 px-3">
-          <div
-            className="h-8 w-8 rounded-full inline-flex items-center justify-center text-sm font-bold text-white shrink-0"
-            style={{ backgroundColor: user.avatarColor }}
-          >
-            {user.name.charAt(0).toUpperCase()}
-          </div>
+          <Link href="/profile">
+            <div
+              className="h-8 w-8 rounded-full inline-flex items-center justify-center text-sm font-bold text-white shrink-0 hover:ring-2 hover:ring-primary/40 transition-all cursor-pointer"
+              style={{ backgroundColor: user.avatarColor }}
+            >
+              {user.name.charAt(0).toUpperCase()}
+            </div>
+          </Link>
           <span className="text-sm font-medium truncate flex-1 min-w-0">{user.name}</span>
           <Button
             variant="ghost"
@@ -152,6 +165,59 @@ function DesktopSidebar() {
         </div>
       </div>
     </aside>
+  );
+}
+
+function MobileTabBar() {
+  const [location] = useLocation();
+
+  const tabs = [
+    { href: "/", label: "Home", icon: LayoutDashboard },
+    { href: "/groups", label: "Groups", icon: Users },
+    null, // center add button placeholder
+    { href: "/friends", label: "Friends", icon: UsersRound },
+    { href: "/profile", label: "Profile", icon: UserRound },
+  ] as const;
+
+  return (
+    <nav className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-card/90 backdrop-blur-xl border-t border-border/40 safe-bottom">
+      <div className="flex items-center h-16">
+        {tabs.map((tab, idx) => {
+          if (!tab) {
+            const isAddActive = location.startsWith("/expenses/new");
+            return (
+              <Link key="add" href="/expenses/new" className="flex-1 flex justify-center">
+                <span
+                  className={cn(
+                    "flex items-center justify-center h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition-all active:scale-90",
+                    isAddActive && "scale-105 shadow-primary/50"
+                  )}
+                >
+                  <Plus className="h-5 w-5" />
+                </span>
+              </Link>
+            );
+          }
+          const isActive = tab.href === "/" ? location === "/" : location.startsWith(tab.href);
+          return (
+            <Link key={tab.href} href={tab.href} className="flex-1">
+              <span className="flex flex-col items-center justify-center h-16 gap-0.5 cursor-pointer active:scale-95 transition-transform select-none">
+                <tab.icon className={cn(
+                  "h-5 w-5 transition-all",
+                  isActive ? "text-primary" : "text-muted-foreground"
+                )} />
+                <span className={cn(
+                  "text-[10px] font-medium",
+                  isActive ? "text-primary" : "text-muted-foreground"
+                )}>
+                  {tab.label}
+                </span>
+              </span>
+            </Link>
+          );
+        })}
+      </div>
+    </nav>
   );
 }
 
@@ -306,14 +372,16 @@ export function Layout({
                 <Moon className="h-4 w-4" />
               )}
             </Button>
-            {/* Avatar (mobile non-back pages) */}
+            {/* Avatar tap → profile (mobile non-back pages) */}
             {!showBack && (
-              <div
-                className="h-9 w-9 rounded-full inline-flex items-center justify-center text-sm font-bold text-white shrink-0 lg:hidden"
-                style={{ backgroundColor: user.avatarColor }}
-              >
-                {user.name.charAt(0).toUpperCase()}
-              </div>
+              <Link href="/profile">
+                <div
+                  className="h-9 w-9 rounded-full inline-flex items-center justify-center text-sm font-bold text-white shrink-0 lg:hidden cursor-pointer active:scale-95 transition-transform"
+                  style={{ backgroundColor: user.avatarColor }}
+                >
+                  {user.name.charAt(0).toUpperCase()}
+                </div>
+              </Link>
             )}
           </div>
         </div>
@@ -324,10 +392,8 @@ export function Layout({
         {children}
       </main>
 
-      {/* Mobile-only floating Chaotechh pill */}
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 lg:hidden">
-        <ChaotechhPill />
-      </div>
+      {/* Mobile bottom tab bar */}
+      <MobileTabBar />
     </div>
   );
 }

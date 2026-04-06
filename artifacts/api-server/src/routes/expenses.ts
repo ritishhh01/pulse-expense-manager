@@ -23,6 +23,7 @@ async function buildExpenseWithSplits(expenseId: number) {
       description: expensesTable.description,
       amount: expensesTable.amount,
       category: expensesTable.category,
+      notes: expensesTable.notes,
       paidByUserId: expensesTable.paidByUserId,
       createdAt: expensesTable.createdAt,
       groupName: groupsTable.name,
@@ -94,6 +95,7 @@ router.get("/expenses", async (req, res): Promise<void> => {
       description: expensesTable.description,
       amount: expensesTable.amount,
       category: expensesTable.category,
+      notes: expensesTable.notes,
       paidByUserId: expensesTable.paidByUserId,
       createdAt: expensesTable.createdAt,
       groupName: groupsTable.name,
@@ -147,11 +149,11 @@ router.post("/expenses", async (req, res): Promise<void> => {
     return;
   }
 
-  const { splits, ...expenseData } = parsed.data;
+  const { splits, notes, ...expenseData } = parsed.data;
 
   const [expense] = await db
     .insert(expensesTable)
-    .values({ ...expenseData, amount: String(expenseData.amount) })
+    .values({ ...expenseData, amount: String(expenseData.amount), notes: notes ?? null })
     .returning();
 
   await db.insert(expenseSplitsTable).values(

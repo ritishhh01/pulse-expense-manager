@@ -52,9 +52,9 @@ router.post("/groups", async (req, res): Promise<void> => {
     return;
   }
 
-  const { memberUserIds, ...groupData } = parsed.data;
+  const { memberUserIds, type, ...groupData } = parsed.data;
 
-  const [group] = await db.insert(groupsTable).values(groupData).returning();
+  const [group] = await db.insert(groupsTable).values({ ...groupData, type: type ?? "other" }).returning();
 
   const memberIds = [groupData.createdByUserId, ...(memberUserIds ?? [])];
   const uniqueMemberIds = [...new Set(memberIds)];
@@ -146,6 +146,38 @@ router.delete("/groups/:id", async (req, res): Promise<void> => {
     res.status(404).json({ error: "Group not found" });
     return;
   }
+
+  res.sendStatus(204);
+});
+
+router.delete("/groups/:id/members/:userId", async (req, res): Promise<void> => {
+  const { userId: clerkId } = getAuth(req);
+  if (!clerkId) { res.status(401).json({ error: "Unauthorized" }); return; }
+
+  const dbUser = await getDbUserByClerkId(clerkId);
+  if (!dbUser) { res.status(401).json({ error: "User not found" }); return; }
+
+  const groupId = parseInt(req.params.id);
+  const targetUserId = parseInt(req.params.userId);
+  if (isNaN(groupId) || isNaN(targetUserId)) {
+    res.status(400).json({ error: "Invalid IDs" });
+    return;
+  }
+
+  const [group] = await db.select().from(groupsTable).where(eq(groupsTable.id, groupId));
+  if (!group) { res.status(404).json({ error: "Group not found" }); return; }
+
+  const isSelf = targetUserId === dbUser.id;
+  const isCreator = group.createdByUserId === dbUser.id;
+
+  if (!isSelf && !isCreator) {
+    res.status(403).json({ error: "Only the group creator can remove other members" });
+    return;
+  }
+
+  await db.delete(groupMembersTable).where(
+    sql`group_id = ${groupId} AND user_id = ${targetUserId}`
+  );
 
   res.sendStatus(204);
 });

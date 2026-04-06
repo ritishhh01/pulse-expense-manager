@@ -3,13 +3,12 @@ import { useLocation, useSearch } from "wouter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Loader2, Minus, Plus } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 
 import { Layout } from "@/components/layout";
 import { ELI7Tooltip } from "@/components/eli7-tooltip";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   Form,
   FormControl,
@@ -19,6 +18,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -26,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useActiveUser } from "@/hooks/use-active-user";
 import {
@@ -41,11 +42,14 @@ import {
 
 const CATEGORIES = ["food", "travel", "entertainment", "shopping", "utilities", "health", "others"];
 
+type SplitMode = "equal" | "custom" | "percentage";
+
 const formSchema = z.object({
   groupId: z.coerce.number().positive("Select a group"),
   description: z.string().min(1, "Description is required"),
   amount: z.coerce.number().positive("Amount must be positive"),
   category: z.string().min(1, "Select a category"),
+  notes: z.string().optional(),
 });
 
 export default function NewExpense() {
@@ -58,7 +62,8 @@ export default function NewExpense() {
   const user = useActiveUser();
   const queryClient = useQueryClient();
   const [selectedGroupId, setSelectedGroupId] = useState<number | undefined>(presetGroupId);
-  const [splitMode, setSplitMode] = useState<"equal" | "custom">("equal");
+  const [splitMode, setSplitMode] = useState<SplitMode>("equal");
+  const [paidByUserId, setPaidByUserId] = useState<number>(user.id);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -67,6 +72,7 @@ export default function NewExpense() {
       description: "",
       amount: 0,
       category: "others",
+      notes: "",
     },
   });
 
@@ -80,24 +86,36 @@ export default function NewExpense() {
   const equalSplit = members.length > 0 ? totalAmount / members.length : 0;
 
   const [customSplits, setCustomSplits] = useState<Record<number, number>>({});
+  const [percentSplits, setPercentSplits] = useState<Record<number, number>>({});
 
   useEffect(() => {
     if (members.length > 0) {
       const equal = parseFloat((totalAmount / members.length).toFixed(2));
+      const equalPct = parseFloat((100 / members.length).toFixed(2));
       const splits: Record<number, number> = {};
-      members.forEach((m) => { splits[m.id] = equal; });
+      const pcts: Record<number, number> = {};
+      members.forEach((m) => { splits[m.id] = equal; pcts[m.id] = equalPct; });
       setCustomSplits(splits);
+      setPercentSplits(pcts);
     }
   }, [members.length, totalAmount]);
+
+  // Reset paidBy to current user when group changes
+  useEffect(() => {
+    setPaidByUserId(user.id);
+  }, [selectedGroupId, user.id]);
 
   const createExpense = useCreateExpense();
 
   function onSubmit(values: z.infer<typeof formSchema>) {
     const splits = members.map((m) => ({
       userId: m.id,
-      amount: splitMode === "equal"
-        ? parseFloat((values.amount / members.length).toFixed(2))
-        : customSplits[m.id] || 0,
+      amount:
+        splitMode === "equal"
+          ? parseFloat((values.amount / members.length).toFixed(2))
+          : splitMode === "percentage"
+          ? parseFloat(((percentSplits[m.id] || 0) / 100 * values.amount).toFixed(2))
+          : customSplits[m.id] || 0,
     }));
 
     createExpense.mutate(
@@ -107,7 +125,8 @@ export default function NewExpense() {
           description: values.description,
           amount: values.amount,
           category: values.category,
-          paidByUserId: user.id,
+          notes: values.notes || null,
+          paidByUserId,
           splits,
         },
       },
@@ -126,11 +145,15 @@ export default function NewExpense() {
     );
   }
 
+  const totalCustom = Object.values(customSplits).reduce((a, v) => a + v, 0);
+  const totalPct = Object.values(percentSplits).reduce((a, v) => a + v, 0);
+
   return (
     <Layout title="Add Expense" showBack backHref="/groups">
       <div className="pt-4 pb-32">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+            {/* Group */}
             <FormField
               control={form.control}
               name="groupId"
@@ -162,6 +185,7 @@ export default function NewExpense() {
               )}
             />
 
+            {/* Description */}
             <FormField
               control={form.control}
               name="description"
@@ -180,6 +204,7 @@ export default function NewExpense() {
               )}
             />
 
+            {/* Amount */}
             <FormField
               control={form.control}
               name="amount"
@@ -203,6 +228,7 @@ export default function NewExpense() {
               )}
             />
 
+            {/* Category */}
             <FormField
               control={form.control}
               name="category"
@@ -226,6 +252,55 @@ export default function NewExpense() {
               )}
             />
 
+            {/* Paid By */}
+            {members.length > 0 && (
+              <div className="space-y-2">
+                <label className="text-muted-foreground uppercase text-xs tracking-wider font-medium">Paid By</label>
+                <Select
+                  value={String(paidByUserId)}
+                  onValueChange={(v) => setPaidByUserId(parseInt(v, 10))}
+                >
+                  <SelectTrigger className="bg-card/50 border-border/50 h-12 focus:ring-primary">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-card border-border">
+                    {members.map((m) => (
+                      <SelectItem key={m.id} value={String(m.id)}>
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="h-5 w-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white"
+                            style={{ backgroundColor: m.avatarColor }}
+                          >
+                            {m.name.charAt(0)}
+                          </div>
+                          {m.name}{m.id === user.id ? " (you)" : ""}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {/* Notes */}
+            <FormField
+              control={form.control}
+              name="notes"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-muted-foreground uppercase text-xs tracking-wider">Notes (Optional)</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Any details about this expense..."
+                      className="bg-card/50 border-border/50 focus-visible:ring-primary resize-none min-h-[80px]"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             {/* Split Logic */}
             {members.length > 0 && (
               <div className="space-y-3">
@@ -234,20 +309,16 @@ export default function NewExpense() {
                     <ELI7Tooltip term="Split Logic" explanation="This is how we figure out who pays what — like cutting a pizza into fair slices for everyone!" />
                   </h3>
                   <div className="flex gap-1 bg-card/50 rounded-full p-1 border border-border/50">
-                    <button
-                      type="button"
-                      onClick={() => setSplitMode("equal")}
-                      className={`px-3 py-1 rounded-full text-xs font-medium transition-all active:scale-95 ${splitMode === "equal" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
-                    >
-                      Equal
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setSplitMode("custom")}
-                      className={`px-3 py-1 rounded-full text-xs font-medium transition-all active:scale-95 ${splitMode === "custom" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
-                    >
-                      Custom
-                    </button>
+                    {(["equal", "percentage", "custom"] as SplitMode[]).map((mode) => (
+                      <button
+                        key={mode}
+                        type="button"
+                        onClick={() => setSplitMode(mode)}
+                        className={`px-3 py-1 rounded-full text-xs font-medium transition-all active:scale-95 ${splitMode === mode ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+                      >
+                        {mode === "equal" ? "Equal" : mode === "percentage" ? "%" : "Custom"}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
@@ -267,6 +338,25 @@ export default function NewExpense() {
                         <span className="font-mono text-sm font-semibold text-muted-foreground">
                           ₹{equalSplit.toFixed(2)}
                         </span>
+                      ) : splitMode === "percentage" ? (
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="number"
+                            step="0.1"
+                            value={percentSplits[member.id] ?? ""}
+                            onChange={(e) =>
+                              setPercentSplits((prev) => ({
+                                ...prev,
+                                [member.id]: parseFloat(e.target.value) || 0,
+                              }))
+                            }
+                            className="w-16 text-right bg-muted/50 rounded-lg border border-border/50 px-2 py-1 font-mono text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                          />
+                          <span className="text-xs text-muted-foreground">%</span>
+                          <span className="text-xs text-muted-foreground font-mono ml-1">
+                            ₹{((percentSplits[member.id] || 0) / 100 * totalAmount).toFixed(2)}
+                          </span>
+                        </div>
                       ) : (
                         <input
                           type="number"
@@ -283,6 +373,17 @@ export default function NewExpense() {
                       )}
                     </div>
                   ))}
+                  {/* Validation hints */}
+                  {splitMode === "custom" && Math.abs(totalCustom - totalAmount) > 0.01 && (
+                    <div className="p-2 text-xs text-center text-destructive">
+                      Total: ₹{totalCustom.toFixed(2)} · Remaining: ₹{(totalAmount - totalCustom).toFixed(2)}
+                    </div>
+                  )}
+                  {splitMode === "percentage" && Math.abs(totalPct - 100) > 0.1 && (
+                    <div className="p-2 text-xs text-center text-destructive">
+                      Total: {totalPct.toFixed(1)}% · Must equal 100%
+                    </div>
+                  )}
                 </Card>
               </div>
             )}

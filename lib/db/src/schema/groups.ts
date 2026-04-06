@@ -8,6 +8,7 @@ export const groupsTable = pgTable("groups", {
   name: text("name").notNull(),
   description: text("description"),
   emoji: text("emoji").notNull().default("💰"),
+  type: text("type").notNull().default("other"),
   createdByUserId: integer("created_by_user_id").notNull().references(() => usersTable.id),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

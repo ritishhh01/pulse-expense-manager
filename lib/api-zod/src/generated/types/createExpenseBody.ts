@@ -12,6 +12,7 @@ export interface CreateExpenseBody {
   description: string;
   amount: number;
   category: string;
+  notes?: string | null;
   paidByUserId: number;
   splits: CreateExpenseBodySplitsItem[];
 }

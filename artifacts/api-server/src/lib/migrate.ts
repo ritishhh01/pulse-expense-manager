@@ -21,6 +21,12 @@ export async function ensureSchema(): Promise<void> {
         ON users (clerk_id) WHERE clerk_id IS NOT NULL
     `);
 
+    // Expense notes column
+    await db.execute(sql`ALTER TABLE expenses ADD COLUMN IF NOT EXISTS notes text`);
+
+    // Group type column
+    await db.execute(sql`ALTER TABLE groups ADD COLUMN IF NOT EXISTS type text NOT NULL DEFAULT 'other'`);
+
     logger.info("Schema migration OK");
   } catch (err) {
     logger.warn({ err }, "Schema migration warning — continuing");

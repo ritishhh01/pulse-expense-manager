@@ -16,6 +16,8 @@ import NewExpense from "@/pages/new-expense";
 import ExpenseDetail from "@/pages/expense-detail";
 import Settle from "@/pages/settle";
 import Activity from "@/pages/activity";
+import Friends from "@/pages/friends";
+import Profile from "@/pages/profile";
 import Landing from "@/pages/landing";
 import NotFound from "@/pages/not-found";
 
@@ -199,6 +201,8 @@ function AuthenticatedApp() {
       <Route path="/expenses/:id" component={ExpenseDetail} />
       <Route path="/settle" component={Settle} />
       <Route path="/activity" component={Activity} />
+      <Route path="/friends" component={Friends} />
+      <Route path="/profile" component={Profile} />
       <Route component={NotFound} />
     </Switch>
   );

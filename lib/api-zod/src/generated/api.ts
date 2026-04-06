@@ -74,6 +74,7 @@ export const CreateGroupBody = zod.object({
   name: zod.string(),
   description: zod.string().nullish(),
   emoji: zod.string(),
+  type: zod.string().optional(),
   createdByUserId: zod.number(),
   memberUserIds: zod.array(zod.number()).optional(),
 });
@@ -184,6 +185,7 @@ export const CreateExpenseBody = zod.object({
   description: zod.string(),
   amount: zod.number(),
   category: zod.string(),
+  notes: zod.string().nullish(),
   paidByUserId: zod.number(),
   splits: zod.array(
     zod.object({

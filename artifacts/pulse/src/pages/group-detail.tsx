@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useParams, useLocation, Link } from "wouter";
-import { Plus, Users, Receipt, Trash2, UserPlus, X, Check } from "lucide-react";
+import { Plus, Users, Receipt, Trash2, UserPlus, X, Check, Search, LogOut, UserX } from "lucide-react";
 import { format } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
@@ -9,6 +9,7 @@ import { Layout } from "@/components/layout";
 import { ELI7Tooltip } from "@/components/eli7-tooltip";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
@@ -26,6 +27,7 @@ import {
   getListUsersQueryKey,
   useAddGroupMember,
 } from "@workspace/api-client-react";
+
 
 const CATEGORY_COLORS: Record<string, string> = {
   food: "bg-orange-500/20 text-orange-400",
@@ -46,6 +48,8 @@ export default function GroupDetail() {
   const queryClient = useQueryClient();
   const [addMemberOpen, setAddMemberOpen] = useState(false);
   const [addingUserId, setAddingUserId] = useState<number | null>(null);
+  const [removingUserId, setRemovingUserId] = useState<number | null>(null);
+  const [search, setSearch] = useState("");
 
   const { data: group, isLoading: isLoadingGroup } = useGetGroup(groupId, {
     query: { enabled: !!groupId, queryKey: getGetGroupQueryKey(groupId) },
@@ -75,6 +79,19 @@ export default function GroupDetail() {
   const currentMemberIds = new Set(group?.members.map((m) => m.id) ?? []);
   const availableToAdd = allUsers?.filter((u) => !currentMemberIds.has(u.id)) ?? [];
 
+  const filteredExpenses = useMemo(() => {
+    if (!expenses || !search.trim()) return expenses;
+    const q = search.toLowerCase();
+    return expenses.filter(
+      (e) =>
+        e.description.toLowerCase().includes(q) ||
+        e.category.toLowerCase().includes(q) ||
+        e.paidByUserName.toLowerCase().includes(q)
+    );
+  }, [expenses, search]);
+
+  const isCreator = group?.createdByUserId === user.id;
+
   function handleDeleteGroup() {
     if (!confirm("Delete this group? This will remove all expenses.")) return;
     deleteGroup.mutate(
@@ -90,6 +107,40 @@ export default function GroupDetail() {
         },
       }
     );
+  }
+
+  async function handleLeaveGroup() {
+    if (!confirm("Leave this group?")) return;
+    try {
+      const res = await fetch(`/api/groups/${groupId}/members/${user.id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed");
+      queryClient.invalidateQueries({ queryKey: getListGroupsQueryKey() });
+      toast({ title: "Left group" });
+      setLocation("/groups");
+    } catch {
+      toast({ title: "Failed to leave group", variant: "destructive" });
+    }
+  }
+
+  async function handleRemoveMember(memberId: number, memberName: string) {
+    if (!confirm(`Remove ${memberName} from this group?`)) return;
+    setRemovingUserId(memberId);
+    try {
+      const res = await fetch(`/api/groups/${groupId}/members/${memberId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed");
+      queryClient.invalidateQueries({ queryKey: getGetGroupQueryKey(groupId) });
+      toast({ title: `${memberName} removed` });
+    } catch {
+      toast({ title: "Failed to remove member", variant: "destructive" });
+    } finally {
+      setRemovingUserId(null);
+    }
   }
 
   function handleAddMember(userId: number, userName: string) {
@@ -135,15 +186,31 @@ export default function GroupDetail() {
       showBack
       backHref="/groups"
       actions={
-        <Button
-          variant="ghost"
-          size="icon"
-          className="rounded-full text-destructive hover:bg-destructive/10 active:scale-95 transition-transform"
-          onClick={handleDeleteGroup}
-          disabled={deleteGroup.isPending}
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center gap-1">
+          {!isCreator && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="rounded-full text-muted-foreground hover:bg-muted active:scale-95 transition-transform"
+              onClick={handleLeaveGroup}
+              title="Leave group"
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
+          )}
+          {isCreator && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="rounded-full text-destructive hover:bg-destructive/10 active:scale-95 transition-transform"
+              onClick={handleDeleteGroup}
+              disabled={deleteGroup.isPending}
+              title="Delete group"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
       }
     >
       <div className="space-y-5 pb-32">
@@ -202,7 +269,7 @@ export default function GroupDetail() {
               onClick={() => setAddMemberOpen(true)}
             >
               <UserPlus className="h-3.5 w-3.5" />
-              Add Member
+              Add
             </Button>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -220,6 +287,19 @@ export default function GroupDetail() {
                 <span className="text-sm font-medium">{member.name}</span>
                 {member.id === user.id && (
                   <span className="text-[10px] text-primary font-mono">you</span>
+                )}
+                {isCreator && member.id !== user.id && (
+                  <button
+                    onClick={() => handleRemoveMember(member.id, member.name)}
+                    disabled={removingUserId === member.id}
+                    className="h-4 w-4 text-muted-foreground hover:text-destructive transition-colors disabled:opacity-40"
+                  >
+                    {removingUserId === member.id ? (
+                      <div className="h-3 w-3 rounded-full border border-current border-t-transparent animate-spin" />
+                    ) : (
+                      <UserX className="h-3.5 w-3.5" />
+                    )}
+                  </button>
                 )}
               </div>
             ))}
@@ -260,18 +340,45 @@ export default function GroupDetail() {
 
         {/* Expenses */}
         <div className="space-y-2">
-          <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Expenses</h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Expenses</h3>
+            {expenses && expenses.length > 3 && (
+              <span className="text-xs text-muted-foreground">{filteredExpenses?.length ?? 0} of {expenses.length}</span>
+            )}
+          </div>
+
+          {/* Search */}
+          {expenses && expenses.length > 0 && (
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search expenses..."
+                className="pl-9 h-10 bg-card/50 border-border/50 text-sm focus-visible:ring-primary"
+              />
+              {search && (
+                <button
+                  onClick={() => setSearch("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
+          )}
+
           {isLoadingExpenses ? (
             <div className="space-y-2">
               {[1, 2, 3].map((i) => <Skeleton key={i} className="h-16 rounded-xl" />)}
             </div>
-          ) : expenses?.length === 0 ? (
+          ) : filteredExpenses?.length === 0 ? (
             <div className="text-center py-8 border border-dashed rounded-xl border-border/50 text-muted-foreground text-sm">
-              No expenses yet. Add one!
+              {search ? `No expenses matching "${search}"` : "No expenses yet. Add one!"}
             </div>
           ) : (
             <Card className="bg-card/60 backdrop-blur divide-y divide-border/50">
-              {expenses?.map((expense) => (
+              {filteredExpenses?.map((expense) => (
                 <Link key={expense.id} href={`/expenses/${expense.id}`}>
                   <div className="p-4 flex items-center gap-3 active:bg-muted/30 transition-colors cursor-pointer">
                     <Badge
@@ -337,7 +444,6 @@ export default function GroupDetail() {
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
               className="fixed inset-x-4 top-1/2 -translate-y-1/2 z-50 max-w-sm mx-auto rounded-2xl border border-border bg-card shadow-2xl overflow-hidden"
             >
-              {/* Modal header */}
               <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-border/50">
                 <div>
                   <h2 className="font-semibold text-base">Add Member</h2>
@@ -351,7 +457,6 @@ export default function GroupDetail() {
                 </button>
               </div>
 
-              {/* User list */}
               <div className="p-3 max-h-72 overflow-y-auto">
                 {availableToAdd.length === 0 ? (
                   <div className="py-8 text-center text-sm text-muted-foreground">
@@ -397,7 +502,6 @@ export default function GroupDetail() {
                 )}
               </div>
 
-              {/* Footer */}
               <div className="px-5 pb-5 pt-3 border-t border-border/50">
                 <Button
                   variant="ghost"
