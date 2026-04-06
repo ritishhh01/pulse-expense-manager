@@ -3,13 +3,23 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Pulse Expense Manager API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: users
+    description: User management
+  - name: groups
+    description: Expense groups
+  - name: expenses
+    description: Expense tracking
+  - name: settlements
+    description: Debt settlements
+  - name: dashboard
+    description: Dashboard summary data
 paths:
   /healthz:
     get:
@@ -24,6 +34,434 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /users:
+    get:
+      operationId: listUsers
+      tags: [users]
+      summary: List all users
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+    post:
+      operationId: createUser
+      tags: [users]
+      summary: Create a user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUserBody"
+      responses:
+        "201":
+          description: Created user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /users/{id}:
+    get:
+      operationId: getUser
+      tags: [users]
+      summary: Get a user by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /groups:
+    get:
+      operationId: listGroups
+      tags: [groups]
+      summary: List all groups
+      responses:
+        "200":
+          description: List of groups
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Group"
+    post:
+      operationId: createGroup
+      tags: [groups]
+      summary: Create a group
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateGroupBody"
+      responses:
+        "201":
+          description: Created group
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Group"
+
+  /groups/{id}:
+    get:
+      operationId: getGroup
+      tags: [groups]
+      summary: Get a group by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Group with members and balances
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GroupDetail"
+        "404":
+          description: Group not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateGroup
+      tags: [groups]
+      summary: Update a group
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateGroupBody"
+      responses:
+        "200":
+          description: Updated group
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Group"
+        "404":
+          description: Group not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteGroup
+      tags: [groups]
+      summary: Delete a group
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Group deleted
+
+  /groups/{id}/members:
+    post:
+      operationId: addGroupMember
+      tags: [groups]
+      summary: Add a member to a group
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddGroupMemberBody"
+      responses:
+        "201":
+          description: Member added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GroupMember"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /expenses:
+    get:
+      operationId: listExpenses
+      tags: [expenses]
+      summary: List expenses, optionally filtered by group
+      parameters:
+        - name: groupId
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of expenses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ExpenseWithSplits"
+    post:
+      operationId: createExpense
+      tags: [expenses]
+      summary: Create an expense
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateExpenseBody"
+      responses:
+        "201":
+          description: Created expense
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExpenseWithSplits"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /expenses/{id}:
+    get:
+      operationId: getExpense
+      tags: [expenses]
+      summary: Get an expense by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Expense found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExpenseWithSplits"
+        "404":
+          description: Expense not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateExpense
+      tags: [expenses]
+      summary: Update an expense (owner only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateExpenseBody"
+      responses:
+        "200":
+          description: Updated expense
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ExpenseWithSplits"
+        "403":
+          description: Forbidden - not the owner
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Expense not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deleteExpense
+      tags: [expenses]
+      summary: Delete an expense (owner only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeleteExpenseBody"
+      responses:
+        "204":
+          description: Expense deleted
+        "403":
+          description: Forbidden - not the owner
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Expense not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /settlements:
+    get:
+      operationId: listSettlements
+      tags: [settlements]
+      summary: List settlements, optionally filtered by group
+      parameters:
+        - name: groupId
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of settlements
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Settlement"
+    post:
+      operationId: createSettlement
+      tags: [settlements]
+      summary: Settle a debt between two users in a group
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSettlementBody"
+      responses:
+        "201":
+          description: Settlement created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Settlement"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get dashboard summary for a user
+      parameters:
+        - name: userId
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /dashboard/balances:
+    get:
+      operationId: getUserBalances
+      tags: [dashboard]
+      summary: Get all balances for a user across all groups
+      parameters:
+        - name: userId
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of balances
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Balance"
+
+  /dashboard/activity:
+    get:
+      operationId: getRecentActivity
+      tags: [dashboard]
+      summary: Get recent activity feed for a user
+      parameters:
+        - name: userId
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Recent activity items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityItem"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +472,408 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        upiId:
+          type: ["string", "null"]
+        avatarColor:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - email
+        - avatarColor
+        - createdAt
+
+    CreateUserBody:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+        upiId:
+          type: ["string", "null"]
+        avatarColor:
+          type: string
+      required:
+        - name
+        - email
+        - avatarColor
+
+    Group:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        emoji:
+          type: string
+        createdByUserId:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - emoji
+        - createdByUserId
+        - createdAt
+
+    GroupDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        emoji:
+          type: string
+        createdByUserId:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+        members:
+          type: array
+          items:
+            $ref: "#/components/schemas/User"
+        totalExpenses:
+          type: number
+        expenseCount:
+          type: integer
+      required:
+        - id
+        - name
+        - emoji
+        - createdByUserId
+        - createdAt
+        - members
+        - totalExpenses
+        - expenseCount
+
+    CreateGroupBody:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        emoji:
+          type: string
+        createdByUserId:
+          type: integer
+        memberUserIds:
+          type: array
+          items:
+            type: integer
+      required:
+        - name
+        - emoji
+        - createdByUserId
+
+    UpdateGroupBody:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        emoji:
+          type: string
+
+    GroupMember:
+      type: object
+      properties:
+        id:
+          type: integer
+        groupId:
+          type: integer
+        userId:
+          type: integer
+        joinedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - groupId
+        - userId
+        - joinedAt
+
+    AddGroupMemberBody:
+      type: object
+      properties:
+        userId:
+          type: integer
+      required:
+        - userId
+
+    ExpenseSplit:
+      type: object
+      properties:
+        id:
+          type: integer
+        expenseId:
+          type: integer
+        userId:
+          type: integer
+        userName:
+          type: string
+        amount:
+          type: number
+        isPaid:
+          type: boolean
+      required:
+        - id
+        - expenseId
+        - userId
+        - userName
+        - amount
+        - isPaid
+
+    ExpenseWithSplits:
+      type: object
+      properties:
+        id:
+          type: integer
+        groupId:
+          type: integer
+        groupName:
+          type: string
+        description:
+          type: string
+        amount:
+          type: number
+        category:
+          type: string
+        paidByUserId:
+          type: integer
+        paidByUserName:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        splits:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExpenseSplit"
+      required:
+        - id
+        - groupId
+        - groupName
+        - description
+        - amount
+        - category
+        - paidByUserId
+        - paidByUserName
+        - createdAt
+        - splits
+
+    CreateExpenseBody:
+      type: object
+      properties:
+        groupId:
+          type: integer
+        description:
+          type: string
+        amount:
+          type: number
+        category:
+          type: string
+        paidByUserId:
+          type: integer
+        splits:
+          type: array
+          items:
+            type: object
+            properties:
+              userId:
+                type: integer
+              amount:
+                type: number
+            required:
+              - userId
+              - amount
+      required:
+        - groupId
+        - description
+        - amount
+        - category
+        - paidByUserId
+        - splits
+
+    UpdateExpenseBody:
+      type: object
+      properties:
+        requestingUserId:
+          type: integer
+        description:
+          type: string
+        amount:
+          type: number
+        category:
+          type: string
+      required:
+        - requestingUserId
+
+    DeleteExpenseBody:
+      type: object
+      properties:
+        requestingUserId:
+          type: integer
+      required:
+        - requestingUserId
+
+    Settlement:
+      type: object
+      properties:
+        id:
+          type: integer
+        groupId:
+          type: integer
+        fromUserId:
+          type: integer
+        fromUserName:
+          type: string
+        toUserId:
+          type: integer
+        toUserName:
+          type: string
+        toUserUpiId:
+          type: ["string", "null"]
+        amount:
+          type: number
+        upiLink:
+          type: ["string", "null"]
+        settledAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - groupId
+        - fromUserId
+        - fromUserName
+        - toUserId
+        - toUserName
+        - amount
+        - settledAt
+
+    CreateSettlementBody:
+      type: object
+      properties:
+        groupId:
+          type: integer
+        fromUserId:
+          type: integer
+        toUserId:
+          type: integer
+        amount:
+          type: number
+      required:
+        - groupId
+        - fromUserId
+        - toUserId
+        - amount
+
+    Balance:
+      type: object
+      properties:
+        groupId:
+          type: integer
+        groupName:
+          type: string
+        groupEmoji:
+          type: string
+        withUserId:
+          type: integer
+        withUserName:
+          type: string
+        withUserUpiId:
+          type: ["string", "null"]
+        amount:
+          type: number
+        direction:
+          type: string
+          enum: [owe, owed]
+      required:
+        - groupId
+        - groupName
+        - groupEmoji
+        - withUserId
+        - withUserName
+        - amount
+        - direction
+
+    DashboardSummary:
+      type: object
+      properties:
+        totalOwed:
+          type: number
+        totalOwe:
+          type: number
+        netBalance:
+          type: number
+        groupCount:
+          type: integer
+        recentExpenseCount:
+          type: integer
+        settledThisMonth:
+          type: number
+      required:
+        - totalOwed
+        - totalOwe
+        - netBalance
+        - groupCount
+        - recentExpenseCount
+        - settledThisMonth
+
+    ActivityItem:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum: [expense_added, settlement_done, group_joined]
+        description:
+          type: string
+        amount:
+          type: ["number", "null"]
+        groupName:
+          type: string
+        actorName:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - type
+        - description
+        - groupName
+        - actorName
+        - createdAt
