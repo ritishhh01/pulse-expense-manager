@@ -20,24 +20,25 @@ import { createProxyMiddleware } from "http-proxy-middleware";
 import type { RequestHandler } from "express";
 
 const CLERK_FAPI = "https://frontend-api.clerk.dev";
+const CLERK_NPM_CDN = "https://npm.clerk.dev";
 export const CLERK_PROXY_PATH = "/api/__clerk";
 
 export function clerkProxyMiddleware(): RequestHandler {
-  // Only run proxy in production — Clerk proxying doesn't work for dev instances
-  if (process.env.NODE_ENV !== "production") {
-    return (_req, _res, next) => next();
-  }
-
+  // Run proxy whenever a secret key is present (works in both dev and prod
+  // instances that have been configured with a secret key).
   const secretKey = process.env.CLERK_SECRET_KEY;
   if (!secretKey) {
     return (_req, _res, next) => next();
   }
 
   return createProxyMiddleware({
-    target: CLERK_FAPI,
+    // Dynamic target: npm CDN requests go to npm.clerk.dev, everything else
+    // (FAPI calls) goes to frontend-api.clerk.dev.
+    router: (req) => {
+      if (req.url?.startsWith("/npm/")) return CLERK_NPM_CDN;
+      return CLERK_FAPI;
+    },
     changeOrigin: true,
-    pathRewrite: (path: string) =>
-      path.replace(new RegExp(`^${CLERK_PROXY_PATH}`), ""),
     on: {
       proxyReq: (proxyReq, req) => {
         const protocol = req.headers["x-forwarded-proto"] || "https";

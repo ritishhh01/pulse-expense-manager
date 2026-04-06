@@ -7,7 +7,8 @@ import router from "./routes";
 import { logger } from "./lib/logger";
 
 // req.path inside app.use("/api", ...) is stripped of the "/api" prefix
-const PUBLIC_PATHS = ["/health", "/auth/me"];
+// /__clerk must be public so Clerk's own proxy requests are never blocked by requireAuth
+const PUBLIC_PATHS = ["/health", "/auth/me", "/__clerk"];
 
 function requireAuth(req: Request, res: Response, next: NextFunction): void {
   // Skip auth for public paths
