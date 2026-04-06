@@ -151,3 +151,22 @@ html.dark {
 html:not(.dark) {
   color-scheme: light;
 }
+
+/* ── Clerk component overrides ────────────────────────────────────────────── */
+
+/* Force Google / social sign-in button to always be white with dark text     */
+.cl-socialButtonsBlockButton {
+  background-color: #ffffff !important;
+  color: #111827 !important;
+  border: 1px solid #d1d5db !important;
+}
+
+.cl-socialButtonsBlockButton:hover {
+  background-color: #f9fafb !important;
+}
+
+.cl-socialButtonsBlockButtonText {
+  color: #111827 !important;
+  font-weight: 500 !important;
+}
+

@@ -25,6 +25,49 @@ if (!clerkPubKey) {
   throw new Error("Missing VITE_CLERK_PUBLISHABLE_KEY");
 }
 
+const clerkAppearance = {
+  variables: {
+    colorPrimary: "#39FF14",
+    colorBackground: "hsl(240 17% 8%)",
+    colorInputBackground: "hsl(240 10% 15%)",
+    colorInputText: "#ffffff",
+    colorText: "#ffffff",
+    colorTextSecondary: "hsl(240 5% 64%)",
+    borderRadius: "0.75rem",
+    fontFamily: "Inter, system-ui, sans-serif",
+  },
+  elements: {
+    card: {
+      style: {
+        background: "hsl(240 14% 10%)",
+        border: "1px solid hsl(240 10% 18%)",
+        boxShadow: "0 25px 50px -12px rgb(57 255 20 / 0.08)",
+      },
+    },
+    // Make the Google / social button readable: white bg, dark text
+    socialButtonsBlockButton: {
+      style: {
+        backgroundColor: "#ffffff",
+        color: "#1a1a1a",
+        border: "1px solid #e2e8f0",
+      },
+    },
+    socialButtonsBlockButtonText: {
+      style: { color: "#1a1a1a", fontWeight: "500" },
+    },
+    dividerLine: {
+      style: { background: "hsl(240 10% 20%)" },
+    },
+    formFieldInput: {
+      style: {
+        background: "hsl(240 10% 15%)",
+        color: "#ffffff",
+        border: "1px solid hsl(240 10% 22%)",
+      },
+    },
+  },
+};
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: { staleTime: 10_000, retry: 1 },
@@ -60,22 +103,7 @@ function SignInPage() {
         routing="path"
         path={`${basePath}/sign-in`}
         signUpUrl={`${basePath}/sign-up`}
-        appearance={{
-          variables: {
-            colorPrimary: "#39FF14",
-            colorBackground: "hsl(240 17% 8%)",
-            colorInputBackground: "hsl(240 10% 15%)",
-            colorInputText: "#ffffff",
-            colorText: "#ffffff",
-            colorTextSecondary: "hsl(240 5% 60%)",
-            colorNeutral: "hsl(240 10% 20%)",
-            borderRadius: "0.75rem",
-            fontFamily: "Inter, system-ui, sans-serif",
-          },
-          elements: {
-            card: "shadow-2xl shadow-primary/10 border border-border/40 bg-card",
-          },
-        }}
+        appearance={clerkAppearance}
       />
     </div>
   );
@@ -88,22 +116,7 @@ function SignUpPage() {
         routing="path"
         path={`${basePath}/sign-up`}
         signInUrl={`${basePath}/sign-in`}
-        appearance={{
-          variables: {
-            colorPrimary: "#39FF14",
-            colorBackground: "hsl(240 17% 8%)",
-            colorInputBackground: "hsl(240 10% 15%)",
-            colorInputText: "#ffffff",
-            colorText: "#ffffff",
-            colorTextSecondary: "hsl(240 5% 60%)",
-            colorNeutral: "hsl(240 10% 20%)",
-            borderRadius: "0.75rem",
-            fontFamily: "Inter, system-ui, sans-serif",
-          },
-          elements: {
-            card: "shadow-2xl shadow-primary/10 border border-border/40 bg-card",
-          },
-        }}
+        appearance={clerkAppearance}
       />
     </div>
   );
@@ -123,13 +136,25 @@ function AppLoadingScreen() {
 }
 
 function AuthenticatedApp() {
-  const { isLoading, error } = useActiveUserState();
+  const { isLoading, error, refetch } = useActiveUserState();
 
   if (isLoading) return <AppLoadingScreen />;
   if (error) {
     return (
-      <div className="min-h-[100dvh] bg-background flex items-center justify-center text-destructive text-sm">
-        Failed to load profile. Please refresh.
+      <div className="min-h-[100dvh] bg-background flex flex-col items-center justify-center gap-4 p-6 text-center">
+        <div className="h-12 w-12 rounded-2xl bg-destructive/10 flex items-center justify-center">
+          <span className="text-destructive text-xl">!</span>
+        </div>
+        <div>
+          <p className="text-foreground font-medium mb-1">Couldn't load your profile</p>
+          <p className="text-muted-foreground text-sm">Check your connection and try again.</p>
+        </div>
+        <button
+          onClick={refetch}
+          className="px-5 py-2 rounded-full bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors"
+        >
+          Retry
+        </button>
       </div>
     );
   }
