@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db, expensesTable, expenseSplitsTable, settlementsTable, groupsTable, groupMembersTable, usersTable } from "@workspace/db";
-import { eq, and, sql, gte } from "drizzle-orm";
+import { eq, and, sql, gte, inArray } from "drizzle-orm";
 import {
   GetDashboardSummaryQueryParams,
   GetUserBalancesQueryParams,
@@ -48,17 +48,28 @@ router.get("/dashboard/summary", async (req, res): Promise<void> => {
     }
   }
 
-  const settlementRows = await db
-    .select({ amount: settlementsTable.amount, fromUserId: settlementsTable.fromUserId, toUserId: settlementsTable.toUserId })
-    .from(settlementsTable)
-    .where(gte(settlementsTable.settledAt, sql`NOW() - INTERVAL '30 days'`));
+  // Deduct settlements from the raw split totals so the dashboard reflects real outstanding amounts
+  const allSettlements = await db
+    .select({ amount: settlementsTable.amount, fromUserId: settlementsTable.fromUserId, toUserId: settlementsTable.toUserId, settledAt: settlementsTable.settledAt })
+    .from(settlementsTable);
 
   let settledThisMonth = 0;
-  for (const s of settlementRows) {
-    if (s.fromUserId === userId || s.toUserId === userId) {
-      settledThisMonth += parseFloat(s.amount as string);
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+  for (const s of allSettlements) {
+    const sAmount = parseFloat(s.amount as string);
+    // fromUserId paid toUserId → user was the debtor
+    if (s.fromUserId === userId) totalOwe -= sAmount;
+    // toUserId received money → user was the creditor
+    if (s.toUserId === userId) totalOwed -= sAmount;
+    // Track settled this month (involving user)
+    if ((s.fromUserId === userId || s.toUserId === userId) && s.settledAt >= thirtyDaysAgo) {
+      settledThisMonth += sAmount;
     }
   }
+
+  totalOwe = Math.max(0, totalOwe);
+  totalOwed = Math.max(0, totalOwed);
 
   const recentExpenses = await db
     .select({ id: expensesTable.id })
@@ -189,6 +200,19 @@ router.get("/dashboard/activity", async (req, res): Promise<void> => {
 
   const { userId } = params.data;
 
+  // Scope activity to groups the user is a member of
+  const userMemberRows = await db
+    .select({ groupId: groupMembersTable.groupId })
+    .from(groupMembersTable)
+    .where(eq(groupMembersTable.userId, userId));
+
+  const userGroupIds = userMemberRows.map((r) => r.groupId);
+
+  if (userGroupIds.length === 0) {
+    res.json([]);
+    return;
+  }
+
   const recentExpenses = await db
     .select({
       id: expensesTable.id,
@@ -203,6 +227,7 @@ router.get("/dashboard/activity", async (req, res): Promise<void> => {
     .from(expensesTable)
     .leftJoin(groupsTable, eq(expensesTable.groupId, groupsTable.id))
     .leftJoin(usersTable, eq(expensesTable.paidByUserId, usersTable.id))
+    .where(inArray(expensesTable.groupId, userGroupIds))
     .orderBy(sql`${expensesTable.createdAt} DESC`)
     .limit(20);
 
@@ -218,6 +243,7 @@ router.get("/dashboard/activity", async (req, res): Promise<void> => {
     })
     .from(settlementsTable)
     .leftJoin(groupsTable, eq(settlementsTable.groupId, groupsTable.id))
+    .where(inArray(settlementsTable.groupId, userGroupIds))
     .orderBy(sql`${settlementsTable.settledAt} DESC`)
     .limit(10);
 

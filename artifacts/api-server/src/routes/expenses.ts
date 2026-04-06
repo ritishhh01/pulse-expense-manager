@@ -1,6 +1,8 @@
 import { Router, type IRouter } from "express";
-import { db, expensesTable, expenseSplitsTable, groupsTable, usersTable } from "@workspace/db";
-import { eq, and } from "drizzle-orm";
+import { db, expensesTable, expenseSplitsTable, groupsTable, groupMembersTable, usersTable } from "@workspace/db";
+import { eq, and, inArray } from "drizzle-orm";
+import { getAuth } from "@clerk/express";
+import { getDbUserByClerkId } from "../lib/get-db-user";
 import {
   ListExpensesQueryParams,
   CreateExpenseBody,
@@ -67,6 +69,24 @@ router.get("/expenses", async (req, res): Promise<void> => {
     return;
   }
 
+  const { userId: clerkId } = getAuth(req);
+  if (!clerkId) { res.status(401).json({ error: "Unauthorized" }); return; }
+
+  const dbUser = await getDbUserByClerkId(clerkId);
+  if (!dbUser) { res.status(401).json({ error: "User not found" }); return; }
+
+  const memberRows = await db
+    .select({ groupId: groupMembersTable.groupId })
+    .from(groupMembersTable)
+    .where(eq(groupMembersTable.userId, dbUser.id));
+
+  const userGroupIds = memberRows.map((r) => r.groupId);
+
+  if (userGroupIds.length === 0) {
+    res.json([]);
+    return;
+  }
+
   let query = db
     .select({
       id: expensesTable.id,
@@ -84,8 +104,8 @@ router.get("/expenses", async (req, res): Promise<void> => {
     .leftJoin(usersTable, eq(expensesTable.paidByUserId, usersTable.id));
 
   const rows = params.data.groupId
-    ? await query.where(eq(expensesTable.groupId, params.data.groupId))
-    : await query;
+    ? await query.where(and(eq(expensesTable.groupId, params.data.groupId), inArray(expensesTable.groupId, userGroupIds)))
+    : await query.where(inArray(expensesTable.groupId, userGroupIds));
 
   const expenses = await Promise.all(
     rows.map(async (e) => {

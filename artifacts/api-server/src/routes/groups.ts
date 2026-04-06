@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db, groupsTable, groupMembersTable, usersTable, expensesTable } from "@workspace/db";
 import { eq, inArray, sql } from "drizzle-orm";
+import { getAuth } from "@clerk/express";
 import {
   CreateGroupBody,
   GetGroupParams,
@@ -13,11 +14,34 @@ import {
   GetGroupResponse,
   UpdateGroupResponse,
 } from "@workspace/api-zod";
+import { getDbUserByClerkId } from "../lib/get-db-user";
 
 const router: IRouter = Router();
 
 router.get("/groups", async (req, res): Promise<void> => {
-  const groups = await db.select().from(groupsTable).orderBy(groupsTable.createdAt);
+  const { userId: clerkId } = getAuth(req);
+  if (!clerkId) { res.status(401).json({ error: "Unauthorized" }); return; }
+
+  const dbUser = await getDbUserByClerkId(clerkId);
+  if (!dbUser) { res.status(401).json({ error: "User not found" }); return; }
+
+  const memberRows = await db
+    .select({ groupId: groupMembersTable.groupId })
+    .from(groupMembersTable)
+    .where(eq(groupMembersTable.userId, dbUser.id));
+
+  if (memberRows.length === 0) {
+    res.json([]);
+    return;
+  }
+
+  const groupIds = memberRows.map((r) => r.groupId);
+  const groups = await db
+    .select()
+    .from(groupsTable)
+    .where(inArray(groupsTable.id, groupIds))
+    .orderBy(groupsTable.createdAt);
+
   res.json(ListGroupsResponse.parse(groups));
 });
 
