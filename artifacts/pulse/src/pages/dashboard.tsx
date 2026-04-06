@@ -115,11 +115,12 @@ export default function Dashboard() {
             </Button>
           </div>
           
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
             {isLoadingGroups ? (
               <>
                 <Skeleton className="h-32 rounded-2xl" />
                 <Skeleton className="h-32 rounded-2xl" />
+                <Skeleton className="h-32 rounded-2xl hidden lg:block" />
               </>
             ) : groups?.length === 0 ? (
               <div className="col-span-2 text-center p-6 border border-dashed rounded-2xl text-muted-foreground text-sm">
@@ -222,8 +223,8 @@ export default function Dashboard() {
       </div>
 
       {/* Floating Action Buttons */}
-      <div className="fixed bottom-20 left-0 right-0 p-4 flex justify-center gap-3 z-40 pointer-events-none">
-        <div className="container max-w-lg mx-auto flex justify-center gap-3 pointer-events-auto">
+      <div className="fixed bottom-20 left-0 lg:left-60 right-0 p-4 flex justify-center gap-3 z-40 pointer-events-none lg:bottom-6">
+        <div className="flex justify-center gap-3 pointer-events-auto">
           <Button asChild size="lg" className="rounded-full shadow-xl shadow-primary/20 bg-primary text-primary-foreground hover:bg-primary/90 active:scale-95 transition-transform px-6">
             <Link href="/expenses/new">
               <Plus className="mr-2 h-5 w-5" /> Add Expense

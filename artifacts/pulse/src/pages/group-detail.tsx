@@ -248,7 +248,7 @@ export default function GroupDetail() {
       </div>
 
       {/* Floating Action Buttons */}
-      <div className="fixed bottom-20 left-0 right-0 p-4 flex justify-center gap-3 z-40 pointer-events-none">
+      <div className="fixed bottom-20 left-0 lg:left-60 right-0 p-4 flex justify-center gap-3 z-40 pointer-events-none lg:bottom-6">
         <div className="container max-w-lg mx-auto flex justify-center gap-3 pointer-events-auto">
           <Button
             asChild

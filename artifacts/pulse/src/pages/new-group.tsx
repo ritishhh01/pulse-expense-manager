@@ -157,7 +157,7 @@ export default function NewGroup() {
             />
 
             {/* Bottom sticky button */}
-            <div className="fixed bottom-20 left-0 right-0 p-4 z-40 bg-gradient-to-t from-background via-background to-transparent">
+            <div className="fixed bottom-0 left-0 lg:left-60 right-0 p-4 z-40 bg-gradient-to-t from-background via-background to-transparent">
               <div className="container max-w-lg mx-auto">
                 <Button 
                   type="submit" 

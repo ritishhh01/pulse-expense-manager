@@ -92,7 +92,7 @@ export default function Groups() {
       </div>
 
       {/* Floating Action Button */}
-      <div className="fixed bottom-20 left-0 right-0 p-4 flex justify-center z-40 pointer-events-none">
+      <div className="fixed bottom-20 left-0 lg:left-60 right-0 p-4 flex justify-center z-40 pointer-events-none lg:bottom-6">
         <Button asChild size="lg" className="rounded-full shadow-xl shadow-primary/20 bg-primary text-primary-foreground hover:bg-primary/90 active:scale-95 transition-transform pointer-events-auto px-6">
           <Link href="/groups/new">
             <Plus className="mr-2 h-5 w-5" /> New Group

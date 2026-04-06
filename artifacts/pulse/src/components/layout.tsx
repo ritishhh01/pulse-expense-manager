@@ -1,25 +1,64 @@
 import { useState } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useActiveUser } from "@/hooks/use-active-user";
 import { useTheme } from "@/hooks/use-theme";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ArrowLeft, Sun, Moon } from "lucide-react";
+import {
+  X,
+  ArrowLeft,
+  Sun,
+  Moon,
+  LayoutDashboard,
+  Users,
+  Plus,
+  ArrowLeftRight,
+  Activity,
+  Menu,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+
+const NAV_ITEMS = [
+  { href: "/", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/groups", label: "Groups", icon: Users },
+  { href: "/expenses/new", label: "Add Expense", icon: Plus },
+  { href: "/settle", label: "Settle Up", icon: ArrowLeftRight },
+  { href: "/activity", label: "Activity", icon: Activity },
+];
+
+function NavLink({ href, label, icon: Icon }: (typeof NAV_ITEMS)[0]) {
+  const [location] = useLocation();
+  const isActive =
+    href === "/" ? location === "/" : location.startsWith(href);
+  return (
+    <Link href={href}>
+      <span
+        className={cn(
+          "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all active:scale-95 cursor-pointer",
+          isActive
+            ? "bg-primary/15 text-primary"
+            : "text-muted-foreground hover:text-foreground hover:bg-muted"
+        )}
+      >
+        <Icon className="h-4 w-4 shrink-0" />
+        {label}
+      </span>
+    </Link>
+  );
+}
 
 export function ChaotechhPill() {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
     <>
-      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
-        <button
-          onClick={() => setIsOpen(true)}
-          className="group relative flex items-center gap-2 rounded-full border border-primary/40 bg-white/5 px-4 py-2 text-xs font-mono text-primary/80 backdrop-blur-md transition-all hover:border-primary hover:text-primary hover:bg-primary/10 active:scale-95"
-        >
-          <span>⚡</span>
-          <span>built by chaotechh</span>
-        </button>
-      </div>
+      <button
+        onClick={() => setIsOpen(true)}
+        className="group relative flex items-center gap-2 rounded-full border border-primary/40 bg-background/50 px-3 py-1.5 text-xs font-mono text-primary/70 backdrop-blur-md transition-all hover:border-primary hover:text-primary hover:bg-primary/10 active:scale-95 w-full justify-center lg:justify-start"
+      >
+        <span>⚡</span>
+        <span className="hidden lg:inline">built by chaotechh</span>
+      </button>
 
       <AnimatePresence>
         {isOpen && (
@@ -44,7 +83,8 @@ export function ChaotechhPill() {
                   Pulse is a Chaotechh Curation.
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  Crafted for the tech-forward. Built to make money feel less like math and more like magic.
+                  Crafted for the tech-forward. Built to make money feel less
+                  like math and more like magic.
                 </p>
               </div>
             </motion.div>
@@ -52,6 +92,60 @@ export function ChaotechhPill() {
         )}
       </AnimatePresence>
     </>
+  );
+}
+
+function DesktopSidebar() {
+  const user = useActiveUser();
+  const { theme, toggleTheme } = useTheme();
+
+  return (
+    <aside className="hidden lg:flex flex-col fixed left-0 top-0 h-full w-60 border-r border-border/40 bg-card/80 backdrop-blur-xl z-40 px-3 py-4">
+      {/* Brand */}
+      <div className="flex items-center gap-2 px-3 mb-6">
+        <div className="h-8 w-8 rounded-xl bg-primary/15 inline-flex items-center justify-center">
+          <span className="text-primary font-bold text-base">₹</span>
+        </div>
+        <span className="font-bold text-lg tracking-tight">Pulse</span>
+      </div>
+
+      {/* Nav */}
+      <nav className="flex-1 space-y-1">
+        {NAV_ITEMS.map((item) => (
+          <NavLink key={item.href} {...item} />
+        ))}
+      </nav>
+
+      {/* Bottom section */}
+      <div className="space-y-3 pt-4 border-t border-border/40">
+        <ChaotechhPill />
+
+        <div className="flex items-center justify-between px-3">
+          <div className="flex items-center gap-2 min-w-0">
+            <div
+              className="h-8 w-8 rounded-full inline-flex items-center justify-center text-sm font-bold text-white shrink-0"
+              style={{ backgroundColor: user.avatarColor }}
+            >
+              {user.name.charAt(0).toUpperCase()}
+            </div>
+            <span className="text-sm font-medium truncate">{user.name}</span>
+          </div>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleTheme}
+            className="h-8 w-8 rounded-full shrink-0 text-muted-foreground hover:text-foreground"
+            aria-label="Toggle theme"
+          >
+            {theme === "dark" ? (
+              <Sun className="h-4 w-4" />
+            ) : (
+              <Moon className="h-4 w-4" />
+            )}
+          </Button>
+        </div>
+      </div>
+    </aside>
   );
 }
 
@@ -63,17 +157,108 @@ interface LayoutProps {
   actions?: React.ReactNode;
 }
 
-export function Layout({ children, showBack, backHref = "/", title, actions }: LayoutProps) {
+export function Layout({
+  children,
+  showBack,
+  backHref = "/",
+  title,
+  actions,
+}: LayoutProps) {
   const user = useActiveUser();
   const { theme, toggleTheme } = useTheme();
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   return (
-    <div className="min-h-[100dvh] bg-background text-foreground pb-24">
-      <header className="sticky top-0 z-40 w-full backdrop-blur-xl bg-background/80 border-b border-border/40">
-        <div className="container mx-auto max-w-lg px-4 h-16 flex items-center justify-between gap-2">
+    <div className="min-h-[100dvh] bg-background text-foreground">
+      {/* Desktop sidebar */}
+      <DesktopSidebar />
+
+      {/* Mobile nav drawer */}
+      <AnimatePresence>
+        {mobileNavOpen && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm lg:hidden"
+              onClick={() => setMobileNavOpen(false)}
+            />
+            <motion.div
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 300 }}
+              className="fixed left-0 top-0 h-full w-64 z-50 bg-card border-r border-border/40 flex flex-col px-3 py-4 lg:hidden"
+            >
+              <div className="flex items-center justify-between px-3 mb-6">
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-xl bg-primary/15 inline-flex items-center justify-center">
+                    <span className="text-primary font-bold text-base">₹</span>
+                  </div>
+                  <span className="font-bold text-lg tracking-tight">Pulse</span>
+                </div>
+                <button
+                  onClick={() => setMobileNavOpen(false)}
+                  className="h-8 w-8 inline-flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <nav className="flex-1 space-y-1" onClick={() => setMobileNavOpen(false)}>
+                {NAV_ITEMS.map((item) => (
+                  <NavLink key={item.href} {...item} />
+                ))}
+              </nav>
+
+              <div className="space-y-3 pt-4 border-t border-border/40">
+                <div className="px-3">
+                  <ChaotechhPill />
+                </div>
+                <div className="flex items-center justify-between px-3">
+                  <div className="flex items-center gap-2">
+                    <div
+                      className="h-8 w-8 rounded-full inline-flex items-center justify-center text-sm font-bold text-white shrink-0"
+                      style={{ backgroundColor: user.avatarColor }}
+                    >
+                      {user.name.charAt(0).toUpperCase()}
+                    </div>
+                    <span className="text-sm font-medium">{user.name}</span>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={toggleTheme}
+                    className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground"
+                  >
+                    {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Top header (always shown) */}
+      <header className="sticky top-0 z-40 w-full backdrop-blur-xl bg-background/80 border-b border-border/40 lg:ml-60">
+        <div className="px-4 h-14 flex items-center justify-between gap-2 max-w-5xl">
           {/* Left side */}
           <div className="flex items-center gap-2 min-w-0">
-            {showBack ? (
+            {/* Mobile hamburger (only on mobile, only on root pages) */}
+            {!showBack && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-9 w-9 rounded-full lg:hidden active:scale-95 transition-transform"
+                onClick={() => setMobileNavOpen(true)}
+              >
+                <Menu className="h-4 w-4" />
+              </Button>
+            )}
+            {/* Back button */}
+            {showBack && (
               <Button
                 variant="ghost"
                 size="icon"
@@ -84,8 +269,8 @@ export function Layout({ children, showBack, backHref = "/", title, actions }: L
                   <ArrowLeft className="h-4 w-4" />
                 </Link>
               </Button>
-            ) : null}
-            <h1 className="font-semibold text-lg tracking-tight truncate">
+            )}
+            <h1 className="font-semibold text-base tracking-tight truncate">
               {title || "Pulse"}
             </h1>
           </div>
@@ -93,13 +278,12 @@ export function Layout({ children, showBack, backHref = "/", title, actions }: L
           {/* Right side */}
           <div className="flex items-center gap-1.5 shrink-0">
             {actions}
-
-            {/* Theme toggle */}
+            {/* Theme toggle (mobile only — desktop has it in the sidebar) */}
             <Button
               variant="ghost"
               size="icon"
               onClick={toggleTheme}
-              className="h-9 w-9 rounded-full active:scale-95 transition-transform text-muted-foreground hover:text-foreground"
+              className="h-9 w-9 rounded-full active:scale-95 transition-transform text-muted-foreground hover:text-foreground lg:hidden"
               aria-label="Toggle theme"
             >
               {theme === "dark" ? (
@@ -108,11 +292,10 @@ export function Layout({ children, showBack, backHref = "/", title, actions }: L
                 <Moon className="h-4 w-4" />
               )}
             </Button>
-
-            {/* Avatar — only on home/non-back pages */}
+            {/* Avatar (mobile non-back pages) */}
             {!showBack && (
               <div
-                className="h-9 w-9 rounded-full inline-flex items-center justify-center text-sm font-bold text-white shrink-0"
+                className="h-9 w-9 rounded-full inline-flex items-center justify-center text-sm font-bold text-white shrink-0 lg:hidden"
                 style={{ backgroundColor: user.avatarColor }}
               >
                 {user.name.charAt(0).toUpperCase()}
@@ -122,11 +305,15 @@ export function Layout({ children, showBack, backHref = "/", title, actions }: L
         </div>
       </header>
 
-      <main className="container mx-auto max-w-lg px-4 py-4">
+      {/* Main content */}
+      <main className="lg:ml-60 px-4 py-4 pb-28 lg:pb-8 max-w-5xl">
         {children}
       </main>
 
-      <ChaotechhPill />
+      {/* Mobile-only floating Chaotechh pill */}
+      <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 lg:hidden">
+        <ChaotechhPill />
+      </div>
     </div>
   );
 }
