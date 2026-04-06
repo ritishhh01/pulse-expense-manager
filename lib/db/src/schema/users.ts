@@ -4,8 +4,10 @@ import { z } from "zod/v4";
 
 export const usersTable = pgTable("users", {
   id: serial("id").primaryKey(),
+  clerkId: text("clerk_id").unique(),
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
+  phoneNumber: text("phone_number"),
   upiId: text("upi_id"),
   avatarColor: text("avatar_color").notNull().default("#39FF14"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

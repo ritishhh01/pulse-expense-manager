@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useActiveUser } from "@/hooks/use-active-user";
 import { useTheme } from "@/hooks/use-theme";
+import { useClerk } from "@clerk/react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
@@ -14,6 +15,7 @@ import {
   ArrowLeftRight,
   Activity,
   Menu,
+  LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -98,6 +100,7 @@ export function ChaotechhPill() {
 function DesktopSidebar() {
   const user = useActiveUser();
   const { theme, toggleTheme } = useTheme();
+  const { signOut } = useClerk();
 
   return (
     <aside className="hidden lg:flex flex-col fixed left-0 top-0 h-full w-60 border-r border-border/40 bg-card/80 backdrop-blur-xl z-40 px-3 py-4">
@@ -120,16 +123,14 @@ function DesktopSidebar() {
       <div className="space-y-3 pt-4 border-t border-border/40">
         <ChaotechhPill />
 
-        <div className="flex items-center justify-between px-3">
-          <div className="flex items-center gap-2 min-w-0">
-            <div
-              className="h-8 w-8 rounded-full inline-flex items-center justify-center text-sm font-bold text-white shrink-0"
-              style={{ backgroundColor: user.avatarColor }}
-            >
-              {user.name.charAt(0).toUpperCase()}
-            </div>
-            <span className="text-sm font-medium truncate">{user.name}</span>
+        <div className="flex items-center gap-2 px-3">
+          <div
+            className="h-8 w-8 rounded-full inline-flex items-center justify-center text-sm font-bold text-white shrink-0"
+            style={{ backgroundColor: user.avatarColor }}
+          >
+            {user.name.charAt(0).toUpperCase()}
           </div>
+          <span className="text-sm font-medium truncate flex-1 min-w-0">{user.name}</span>
           <Button
             variant="ghost"
             size="icon"
@@ -137,11 +138,16 @@ function DesktopSidebar() {
             className="h-8 w-8 rounded-full shrink-0 text-muted-foreground hover:text-foreground"
             aria-label="Toggle theme"
           >
-            {theme === "dark" ? (
-              <Sun className="h-4 w-4" />
-            ) : (
-              <Moon className="h-4 w-4" />
-            )}
+            {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => signOut()}
+            className="h-8 w-8 rounded-full shrink-0 text-muted-foreground hover:text-destructive"
+            aria-label="Sign out"
+          >
+            <LogOut className="h-4 w-4" />
           </Button>
         </div>
       </div>
@@ -166,6 +172,7 @@ export function Layout({
 }: LayoutProps) {
   const user = useActiveUser();
   const { theme, toggleTheme } = useTheme();
+  const { signOut } = useClerk();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   return (
@@ -216,16 +223,14 @@ export function Layout({
                 <div className="px-3">
                   <ChaotechhPill />
                 </div>
-                <div className="flex items-center justify-between px-3">
-                  <div className="flex items-center gap-2">
-                    <div
-                      className="h-8 w-8 rounded-full inline-flex items-center justify-center text-sm font-bold text-white shrink-0"
-                      style={{ backgroundColor: user.avatarColor }}
-                    >
-                      {user.name.charAt(0).toUpperCase()}
-                    </div>
-                    <span className="text-sm font-medium">{user.name}</span>
+                <div className="flex items-center gap-2 px-3">
+                  <div
+                    className="h-8 w-8 rounded-full inline-flex items-center justify-center text-sm font-bold text-white shrink-0"
+                    style={{ backgroundColor: user.avatarColor }}
+                  >
+                    {user.name.charAt(0).toUpperCase()}
                   </div>
+                  <span className="text-sm font-medium flex-1 min-w-0 truncate">{user.name}</span>
                   <Button
                     variant="ghost"
                     size="icon"
@@ -233,6 +238,15 @@ export function Layout({
                     className="h-8 w-8 rounded-full text-muted-foreground hover:text-foreground"
                   >
                     {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => { setMobileNavOpen(false); signOut(); }}
+                    className="h-8 w-8 rounded-full text-muted-foreground hover:text-destructive"
+                    aria-label="Sign out"
+                  >
+                    <LogOut className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
